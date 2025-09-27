@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 // Carga las variables de entorno desde el archivo .env
+const errorHandler = require('./middleware/errorHandler'); // Importar el middleware de errores
 require('dotenv').config();
 
 const app = express();
@@ -26,28 +27,8 @@ app.use('/api/roles', roleRoutes);
 app.use('/api/empresas', empresaRoutes);
 
 /**
- * Middleware para manejar errores de forma centralizada.
+ * Middleware para manejar errores de forma centralizada (importado).
  */
-const errorHandler = (err, req, res, next) => {
-  console.error(err);
-
-  // Error de violación de unicidad (ej: email duplicado)
-  if (err.code === '23505') {
-    return res.status(409).json({ error: 'El recurso ya existe.', details: err.detail });
-  }
-
-  // Otros errores personalizados que podríamos definir
-  if (err.statusCode) {
-    return res.status(err.statusCode).json({ error: err.message });
-  }
-
-  // Error genérico del servidor.
-  const isDevelopment = process.env.NODE_ENV !== 'production';
-  res.status(500).json({
-    error: isDevelopment ? err.message : 'Error interno del servidor.',
-    details: isDevelopment ? err.stack : undefined,
-  });
-};
 app.use(errorHandler);
 
 app.listen(port, () => {

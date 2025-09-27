@@ -164,7 +164,7 @@ router.post('/', async (req, res, next) => {
   }
 });
 
-const { authenticateToken, authorizeAdmin } = require('./auth.js');
+const { authenticateToken, authorizeAdmin } = require('../middleware/auth.js');
 
 // GET /api/users - Obtener todos los usuarios con sus perfiles
 router.get('/', authenticateToken, authorizeAdmin, async (req, res, next) => {

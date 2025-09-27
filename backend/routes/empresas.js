@@ -1,6 +1,6 @@
 const express = require('express');
 const db = require('../db');
-const { authenticateToken, authorizeAdmin } = require('./auth.js');
+const { authenticateToken, authorizeAdmin } = require('../middleware/auth.js');
 const router = express.Router();
 
 // GET /api/empresas - Obtener todas las empresas (protegido para usuarios autenticados)

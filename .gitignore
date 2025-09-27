@@ -11,6 +11,7 @@ yarn-error.log*
 /backend/node_modules/
 
 # Archivo de variables de entorno (¡muy importante para la seguridad!)
+/backend/.env.example
 /backend/.env
 
 # Carpeta de build del frontend

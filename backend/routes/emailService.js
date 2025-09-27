@@ -29,9 +29,9 @@ async function getTransporter() {
       secure: true, // true para 465, false para otros puertos
       auth: {
         // Tu dirección de correo de Gmail
-        user: process.env.EMAIL_USER || 'mdibella@gmail.com',
+        user: process.env.EMAIL_USER,
         // La contraseña de aplicación de 16 letras que generaste
-        pass: process.env.EMAIL_PASS || '66Matt66',
+        pass: process.env.EMAIL_PASS,
       },
       tls: {
         // No hacer esto en producción, solo para desarrollo con Gmail
