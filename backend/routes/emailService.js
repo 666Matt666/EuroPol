@@ -31,6 +31,20 @@ try {
   transporter = null;
 }
 
+const getAdminAndSupervisorEmails = async () => {
+  const db = require('../db'); // Importación local para evitar dependencias circulares
+  const query = `SELECT u.email FROM usuarios u JOIN roles r ON u.role_id = r.id WHERE r.name IN ('administrador', 'supervisor')`;
+  const { rows } = await db.query(query);
+  return rows.map(a => a.email);
+};
+
+const getUsersFromCompany = async (empresaId) => {
+  const db = require('../db');
+  const query = `SELECT email FROM usuarios WHERE empresa_id = $1 AND status = 'activo'`;
+  const { rows } = await db.query(query, [empresaId]);
+  return rows;
+};
+
 /**
  * Envía una alerta a los administradores sobre un nuevo registro de usuario.
  * @param {object} newUser - El objeto del usuario recién creado.
@@ -120,10 +134,101 @@ const sendPendingActivationEmail = async (newUser) => {
   console.log('Email de cuenta pendiente enviado exitosamente.');
 };
 
+/**
+ * Envía una alerta a los administradores sobre un nuevo presupuesto confirmado.
+ * @param {object} presupuesto - El objeto del presupuesto confirmado.
+ * @param {string} userEmail - El email del usuario que confirmó el presupuesto.
+ * @param {string[]} adminEmails - Un array de los correos de los administradores/supervisores.
+ */
+const sendNewQuoteForReviewAlert = async (presupuesto, userEmail, adminEmails) => {
+  if (!transporter) {
+    throw new Error('El servicio de email no está configurado. No se puede enviar el correo.');
+  }
+  if (!adminEmails || adminEmails.length === 0) {
+    console.warn('ADVERTENCIA: No se envió notificación de presupuesto porque no se encontraron admins/supervisores.');
+    return;
+  }
+
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: adminEmails.join(', '),
+    subject: `Nuevo Presupuesto para Revisión: ${presupuesto.codigo_presupuesto}`,
+    html: `
+      <h1>Nuevo Presupuesto Confirmado</h1>
+      <p>El usuario <strong>${userEmail}</strong> ha confirmado un nuevo presupuesto que requiere revisión.</p>
+      <ul>
+        <li><strong>Código:</strong> ${presupuesto.codigo_presupuesto}</li>
+        <li><strong>Cliente:</strong> ${presupuesto.cliente_nombre}</li>
+      </ul>
+      <p>Por favor, inicia sesión en el panel para revisarlo.</p>
+    `,
+  };
+
+  await transporter.sendMail(mailOptions);
+  console.log('Alerta de nuevo presupuesto enviada exitosamente.');
+};
+
+/**
+ * Envía una notificación a los usuarios de una empresa cuando su presupuesto ha sido aprobado.
+ * @param {object} presupuesto - El objeto del presupuesto aprobado.
+ * @param {string[]} clientEmails - Un array de los correos de los usuarios de la empresa cliente.
+ */
+const sendQuoteApprovedAlert = async (presupuesto, clientEmails) => {
+  if (!transporter) {
+    throw new Error('El servicio de email no está configurado. No se puede enviar el correo.');
+  }
+  if (!clientEmails || clientEmails.length === 0) {
+    console.warn(`ADVERTENCIA: No se envió notificación de presupuesto aprobado porque la empresa cliente no tiene usuarios activos.`);
+    return;
+  }
+
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: clientEmails.join(', '),
+    subject: `Tu Presupuesto ${presupuesto.codigo_presupuesto} ha sido Aprobado`,
+    html: `
+      <h1>¡Buenas noticias!</h1>
+      <p>Nos complace informarte que tu presupuesto con código <strong>${presupuesto.codigo_presupuesto}</strong> ha sido aprobado.</p>
+      <p>Pronto nos pondremos en contacto para coordinar los siguientes pasos.</p>
+      <p>Gracias por confiar en EuroPol.</p>
+    `,
+  };
+
+  await transporter.sendMail(mailOptions);
+  console.log('Notificación de presupuesto aprobado enviada al cliente.');
+};
+
+/**
+ * Envía una notificación a los usuarios de una empresa cuando un presupuesto ha sido modificado por un supervisor.
+ * @param {object} presupuesto - El objeto del presupuesto modificado.
+ * @param {string[]} clientEmails - Un array de los correos de los usuarios de la empresa cliente.
+ */
+const sendQuoteModifiedAlert = async (presupuesto, clientEmails) => {
+  if (!transporter) {
+    throw new Error('El servicio de email no está configurado. No se puede enviar el correo.');
+  }
+  if (!clientEmails || clientEmails.length === 0) {
+    console.warn(`ADVERTENCIA: No se envió notificación de presupuesto modificado porque la empresa cliente no tiene usuarios activos.`);
+    return;
+  }
+
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: clientEmails.join(', '),
+    subject: `Tu Presupuesto ${presupuesto.codigo_presupuesto} ha sido modificado`,
+    html: `
+      <h1>Atención: Presupuesto Modificado</h1>
+      <p>Te informamos que el presupuesto con código <strong>${presupuesto.codigo_presupuesto}</strong> ha sido revisado y modificado por un supervisor.</p>
+      <p>Por favor, inicia sesión en el panel para revisar los cambios y volver a confirmarlo.</p>
+    `,
+  };
+
+  await transporter.sendMail(mailOptions);
+  console.log('Notificación de presupuesto modificado enviada al cliente.');
+};
+
 // --- EXPORTACIÓN CORRECTA ---
 // Esto es lo más importante: nos aseguramos de que las funciones estén disponibles para otros archivos.
 module.exports = {
-  sendNewUserAlert,
-  sendAccountActivationAlert,
-  sendPendingActivationEmail,
+  getAdminAndSupervisorEmails, getUsersFromCompany, sendNewUserAlert, sendAccountActivationAlert, sendPendingActivationEmail, sendNewQuoteForReviewAlert, sendQuoteApprovedAlert, sendQuoteModifiedAlert
 };

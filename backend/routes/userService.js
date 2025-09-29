@@ -7,7 +7,7 @@ const saltRounds = 10;
 
 const getUserById = async (id) => {
   const query = `
-    SELECT u.id, u.email, COALESCE(NULLIF(TRIM(u.status), ''), 'pendiente') as status, r.name as role, e.nombre as empresa_nombre, u.created_at, p.nombre, p.apellido, p.biografia
+    SELECT u.id, u.email, COALESCE(NULLIF(TRIM(u.status), ''), 'pendiente') as status, r.name as role, e.id as empresa_id, e.nombre as empresa_nombre, u.created_at, p.nombre, p.apellido, p.biografia
     FROM usuarios u
     LEFT JOIN roles r ON u.role_id = r.id
     LEFT JOIN empresas e ON u.empresa_id = e.id
@@ -118,7 +118,7 @@ const loginUser = async ({ email, password }) => {
     throw error;
   }
   const fullUser = await getUserById(user.id);
-  const accessToken = jwt.sign({ userId: fullUser.id, role: fullUser.role, nombre: fullUser.nombre }, process.env.JWT_SECRET, { expiresIn: '8h' });
+  const accessToken = jwt.sign({ userId: fullUser.id, role: fullUser.role, nombre: fullUser.nombre, empresaId: fullUser.empresa_id }, process.env.JWT_SECRET, { expiresIn: '8h' });
   return { user: fullUser, token: accessToken };
 };
 

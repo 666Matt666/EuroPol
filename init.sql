@@ -2,13 +2,16 @@
 -- Versión robustecida con orden de borrado y datos de prueba.
 
 -- Borrar tablas existentes en el orden correcto para evitar errores de dependencia
+DROP TABLE IF EXISTS presupuesto_items;
+DROP TABLE IF EXISTS presupuestos;
 -- Primero las que dependen de otras, y al final las tablas maestras.
 DROP TABLE IF EXISTS audit_logs;
 DROP TABLE IF EXISTS productos_bolsas;
 DROP TABLE IF EXISTS dibujos;
-DROP TABLE IF EXISTS materiales;
 DROP TABLE IF EXISTS perfiles;
 DROP TABLE IF EXISTS usuarios;
+-- Las tablas maestras se borran al final
+DROP TABLE IF EXISTS materiales;
 DROP TABLE IF EXISTS empresas;
 DROP TABLE IF EXISTS roles;
 
@@ -85,15 +88,17 @@ CREATE INDEX idx_usuarios_empresa_id ON usuarios(empresa_id);
 CREATE TABLE materiales (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(100) UNIQUE NOT NULL,
-    descripcion TEXT
+    descripcion TEXT,
+    origen VARCHAR(50), -- 'Virgen', 'Reciclado Post-Industrial', etc.
+    es_imprimible BOOLEAN NOT NULL DEFAULT false -- Indica si el material está tratado para impresión.
 );
 
 -- Insertar materiales de ejemplo
-INSERT INTO materiales (nombre, descripcion) VALUES
-('Prueba - Polietileno de Alta Densidad (PEAD)', 'Material resistente y ligero, comúnmente usado para bolsas de supermercado.'),
-('Prueba - Polietileno de Baja Densidad (PEBD)', 'Material flexible y transparente, ideal para bolsas de boutique.'),
-('Prueba - Polipropileno (PP)', 'Material brillante y claro, resistente a la grasa.'),
-('Prueba - Material Compostable (PLA)', 'Alternativa ecológica derivada de recursos renovables como el almidón de maíz.');
+INSERT INTO materiales (nombre, descripcion, origen, es_imprimible) VALUES
+('Prueba - Polietileno de Alta Densidad (PEAD)', 'Material resistente y ligero, comúnmente usado para bolsas de supermercado.', 'Virgen', true),
+('Prueba - Polietileno de Baja Densidad (PEBD)', 'Material flexible y transparente, ideal para bolsas de boutique.', 'Virgen', true),
+('Prueba - Polipropileno (PP)', 'Material brillante y claro, resistente a la grasa.', 'Virgen', false),
+('Prueba - Material Compostable (PLA)', 'Alternativa ecológica derivada de recursos renovables como el almidón de maíz.', 'Renovable', true);
 
 -- Tabla de dibujos o diseños
 CREATE TABLE dibujos (
@@ -122,6 +127,8 @@ CREATE TABLE productos_bolsas (
     alto_cm NUMERIC(10, 2) NOT NULL,
     fuelle_cm NUMERIC(10, 2),
     espesor_micrones INTEGER,
+    precio_base NUMERIC(12, 2) NOT NULL DEFAULT 0.00, -- Precio base del producto
+    peso_unitario_gr NUMERIC(10, 2), -- Peso de una sola bolsa, para cálculos de costo y logística.
     color VARCHAR(50),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -133,14 +140,58 @@ CREATE TABLE productos_bolsas (
 );
 
 -- Insertar productos de ejemplo (asociados al usuario con ID 3)
-INSERT INTO productos_bolsas (nombre_producto, sku, created_by_user_id, material_id, ancho_cm, alto_cm, color) VALUES
-('Prueba - Bolsa Camiseta Mercado', 'SKU-001', 3, 1, 40, 50, 'Blanco'),
-('Prueba - Bolsa Boutique Regalo', 'SKU-002', 3, 2, 30, 40, 'Negro'),
-('Prueba - Saco Transparente Alimento', 'SKU-003', 3, 3, 25, 35, 'Transparente'),
-('Prueba - Bolsa Ecológica Compostable', 'SKU-004', 3, 4, 35, 45, 'Verde'),
-('Prueba - Bolsa Residuos Consorcio', 'SKU-005', 3, 1, 80, 110, 'Negro');
+INSERT INTO productos_bolsas (nombre_producto, sku, created_by_user_id, material_id, ancho_cm, alto_cm, color, precio_base, empresa_id) VALUES
+('Prueba - Bolsa Camiseta Mercado (General)', 'SKU-001', 1, 1, 40, 50, 'Blanco', 0.15, NULL), -- Producto general creado por admin
+('Prueba - Bolsa Boutique Regalo (Cliente 2)', 'SKU-002', 3, 2, 30, 40, 'Negro', 0.25, 2), -- Producto para la empresa del usuario 'ope'
+('Prueba - Saco Transparente Alimento (Cliente 2)', 'SKU-003', 3, 3, 25, 35, 'Transparente', 0.10, 2), -- Producto para la empresa del usuario 'ope'
+('Prueba - Bolsa Ecológica Compostable (General)', 'SKU-004', 2, 4, 35, 45, 'Verde', 0.30, NULL), -- Producto general creado por supervisor
+('Prueba - Bolsa Residuos Consorcio (Cliente 1)', 'SKU-005', 1, 1, 80, 110, 'Negro', 0.50, 1); -- Producto para la empresa principal
 
 -- Trigger para actualizar automáticamente el campo updated_at en cada modificación
+
+-- Tablas para la Gestión de Presupuestos
+
+-- Tabla de encabezados de presupuestos
+CREATE TABLE presupuestos (
+    id SERIAL PRIMARY KEY,
+    codigo_presupuesto VARCHAR(50) UNIQUE, -- Ej: PRE-2024-0001
+    cliente_empresa_id INTEGER NOT NULL, -- La empresa a la que se le hace el presupuesto
+    created_by_user_id INTEGER NOT NULL, -- El usuario que creó el presupuesto
+    status VARCHAR(50) NOT NULL DEFAULT 'borrador', -- borrador, enviado, aprobado, rechazado
+    fecha_vencimiento DATE, -- Fecha de validez de la oferta
+    notas TEXT, -- Notas generales del presupuesto
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    FOREIGN KEY (cliente_empresa_id) REFERENCES empresas(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by_user_id) REFERENCES usuarios(id) ON DELETE SET NULL
+);
+
+-- Tabla de ítems de cada presupuesto
+CREATE TABLE presupuesto_items (
+    id SERIAL PRIMARY KEY,
+    presupuesto_id INTEGER NOT NULL,
+    producto_id INTEGER NOT NULL,
+    cantidad INTEGER NOT NULL,
+    precio_unitario NUMERIC(12, 2) NOT NULL, -- Precio del producto en el momento de presupuestar
+    descripcion_item TEXT, -- Para notas específicas del ítem
+    FOREIGN KEY (presupuesto_id) REFERENCES presupuestos(id) ON DELETE CASCADE,
+    FOREIGN KEY (producto_id) REFERENCES productos_bolsas(id) ON DELETE RESTRICT -- No se puede borrar un producto si está en un presupuesto
+);
+
+-- Trigger para actualizar el 'updated_at' de los presupuestos
+CREATE OR REPLACE FUNCTION update_presupuestos_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+   NEW.updated_at = NOW();
+   RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER update_presupuestos_updated_at
+BEFORE UPDATE ON presupuestos
+FOR EACH ROW
+EXECUTE FUNCTION update_presupuestos_updated_at_column();
+
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN

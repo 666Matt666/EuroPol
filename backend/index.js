@@ -40,6 +40,7 @@ const empresaRoutes = require('./routes/empresas');
 const productRoutes = require('./routes/productos');
 const dibujoRoutes = require('./routes/dibujos');
 const materialRoutes = require('./routes/materiales'); // Nueva ruta
+const presupuestoRoutes = require('./routes/presupuestos'); // Nueva ruta
 const uploadRoutes = require('./routes/uploads'); // Nueva ruta para subidas
 app.use('/api/users', userRoutes);
 app.use('/api/roles', roleRoutes);
@@ -47,6 +48,7 @@ app.use('/api/empresas', empresaRoutes);
 app.use('/api/productos', productRoutes);
 app.use('/api/dibujos', dibujoRoutes);
 app.use('/api/materiales', materialRoutes); // Usar la nueva ruta
+app.use('/api/presupuestos', presupuestoRoutes); // Usar la nueva ruta
 app.use('/api/uploads', uploadRoutes); // Usar la nueva ruta para subidas
 
 /**

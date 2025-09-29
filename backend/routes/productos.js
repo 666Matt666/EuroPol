@@ -14,7 +14,7 @@ router.get('/', authenticateToken, async (req, res, next) => {
     if (role === 'administrador' || role === 'supervisor') {
       // Los supervisores ven todos los productos
       query = `SELECT 
-        p.id, p.sku, p.nombre_producto, p.created_by_user_id, p.empresa_id, p.dibujo_id, p.ancho_cm, p.alto_cm, p.fuelle_cm, p.espesor_micrones, p.color,
+        p.id, p.sku, p.nombre_producto, p.created_by_user_id, p.empresa_id, p.dibujo_id, p.ancho_cm, p.alto_cm, p.fuelle_cm, p.espesor_micrones, p.color, p.precio_base,
         m.nombre as material, d.ruta_archivo_imagen,
         d.nombre as dibujo
       FROM productos_bolsas p
@@ -23,7 +23,7 @@ router.get('/', authenticateToken, async (req, res, next) => {
     } else {
       // Los usuarios estándar ven los productos generales (empresa_id IS NULL) o los de su propia empresa.
       query = `
-        SELECT p.id, p.sku, p.nombre_producto, p.created_by_user_id, p.empresa_id, p.dibujo_id, p.ancho_cm, p.alto_cm, p.fuelle_cm, p.espesor_micrones, p.color,
+        SELECT p.id, p.sku, p.nombre_producto, p.created_by_user_id, p.empresa_id, p.dibujo_id, p.ancho_cm, p.alto_cm, p.fuelle_cm, p.espesor_micrones, p.color, p.precio_base,
                m.nombre as material, d.ruta_archivo_imagen, d.nombre as dibujo
         FROM productos_bolsas p
         JOIN materiales m ON p.material_id = m.id
