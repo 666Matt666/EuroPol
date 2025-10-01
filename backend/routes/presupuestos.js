@@ -288,4 +288,34 @@ router.patch('/:id/aprobar', authenticateToken, authorizeSupervisor, async (req,
   }
 });
 
+// PATCH /api/presupuestos/:id/rechazar - Rechaza un presupuesto (solo supervisores)
+router.patch('/:id/rechazar', authenticateToken, authorizeSupervisor, async (req, res, next) => {
+  const { id } = req.params;
+  const { motivo } = req.body; // Se espera un motivo para el rechazo
+
+  if (!motivo) {
+    return res.status(400).json({ error: 'Se requiere un motivo para rechazar el presupuesto.' });
+  }
+
+  try {
+    // 1. Actualizar el estado a 'rechazado' y añadir el motivo a las notas
+    const updateQuery = `
+      UPDATE presupuestos
+      SET 
+        status = 'rechazado',
+        notas = notas || '\n\n--- MOTIVO DEL RECHAZO ---\n' || $1
+      WHERE id = $2 AND status = 'enviado'
+      RETURNING *;
+    `;
+    const { rows } = await db.query(updateQuery, [motivo, id]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Presupuesto no encontrado o no está en estado 'enviado'." });
+    }
+    res.json({ message: 'Presupuesto rechazado exitosamente.', presupuesto: rows[0] });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;

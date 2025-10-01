@@ -1,18 +1,22 @@
+version: '3.8'
+
 services:
+  # Zookeeper es una dependencia de Kafka
   zookeeper:
-    image: confluentinc/cp-zookeeper:7.3.2
+    image: confluentinc/cp-zookeeper:7.3.0
     container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
+  # Broker de Kafka
   kafka:
-    image: confluentinc/cp-kafka:7.3.2
+    image: confluentinc/cp-kafka:7.3.0
     container_name: kafka
     depends_on:
       - zookeeper
     ports:
-      - "9092:9092"
+      - "9092:9092" # Expone el puerto de Kafka a tu máquina local
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
@@ -20,3 +24,16 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+
+  # Base de datos PostgreSQL
+  postgres:
+    image: postgres:14-alpine
+    container_name: postgres_db
+    ports:
+      - "5432:5432" # Expone el puerto de PostgreSQL
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: europol
+      POSTGRES_PASSWORD: tu_contraseña_de_postgres # ¡Asegúrate de que coincida con tu .env!
