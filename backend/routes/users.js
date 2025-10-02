@@ -27,9 +27,48 @@ router.post('/', async (req, res, next) => {
   }
 
   try {
-    const newUser = await userService.createUser(req.body);
+    // Forzamos el estado a 'pendiente' para todos los nuevos usuarios,
+    // ignorando cualquier estado que pudiera venir en el body.
+    const userData = {
+      ...req.body,
+      status: 'pendiente'
+    };
+    const newUser = await userService.createUser(userData);
     res.status(201).json(newUser);
   } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/users/verify-email - Verificar el email de un usuario con un código
+router.post('/verify-email', async (req, res, next) => {
+  const { email, code } = req.body;
+  if (!email || !code) {
+    return res.status(400).json({ message: 'Email y código de verificación son requeridos.' });
+  }
+
+  try {
+    const user = await userService.verifyUserEmail(email, code);
+    if (!user) {
+      return res.status(400).json({ message: 'El código de verificación es inválido o ha expirado.' });
+    }
+
+    // Si la verificación es exitosa, ahora notificamos a los administradores.
+    (async () => {
+      try {
+        const adminEmails = await userService.getAdminEmails();
+        await require('./emailService').sendNewUserAlert(user, adminEmails);
+      } catch (emailError) {
+        console.error('Email verificado, pero falló la notificación a los administradores.', emailError);
+      }
+    })();
+
+    res.json({ message: '¡Tu email ha sido verificado con éxito! Un administrador revisará tu cuenta. Revisa tu correo, ya que allí te llegará la notificación de alta.' });
+  } catch (error) {
+    // Si el servicio lanza un error con mensaje específico
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
     next(error);
   }
 });

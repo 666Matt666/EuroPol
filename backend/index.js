@@ -1,11 +1,11 @@
 // Carga las variables de entorno desde el archivo .env ANTES que cualquier otro código
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const express = require('express');
 const cors = require('cors');
 const errorHandler = require('./errorHandler'); // Importar el middleware de errores
 const fs = require('fs');
-const path = require('path');
 const kafkaService = require('./kafkaService'); // Importar el servicio de Kafka
 
 const app = express();

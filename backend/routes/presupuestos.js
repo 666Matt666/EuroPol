@@ -161,7 +161,7 @@ router.put('/:id', authenticateToken, async (req, res, next) => {
         return res.status(403).json({ error: `Los supervisores no pueden editar presupuestos en estado '${currentStatus}'.` });
       }
       if (currentStatus === 'enviado') {
-        newStatus = 'borrador'; // El presupuesto vuelve a borrador para que el cliente lo confirme de nuevo.
+        newStatus = 'borrador'; // El presupuesto vuelve a borrador para que el operador lo confirme de nuevo.
         wasModifiedBySupervisor = true;
       }
     } else { // Usuario estándar
@@ -172,10 +172,15 @@ router.put('/:id', authenticateToken, async (req, res, next) => {
 
     // 3. Actualizar el encabezado del presupuesto
     const presupuestoQuery = `
-      UPDATE presupuestos SET cliente_empresa_id = $1, fecha_vencimiento = $2, notas = $3, status = $4
+      UPDATE presupuestos
+      SET
+        cliente_empresa_id = $1, 
+        fecha_vencimiento = $2, 
+        notas = $3, -- Siempre actualizamos con las notas que vienen del frontend
+        status = $4
       WHERE id = $5;
     `;
-    await client.query(presupuestoQuery, [cliente_empresa_id, fecha_vencimiento || null, notas || null, newStatus, id]);
+    await client.query(presupuestoQuery, [cliente_empresa_id, fecha_vencimiento || null, notas || '', newStatus, id]);
 
     // 4. Borrar los ítems antiguos
     await client.query('DELETE FROM presupuesto_items WHERE presupuesto_id = $1', [id]);
@@ -303,7 +308,7 @@ router.patch('/:id/rechazar', authenticateToken, authorizeSupervisor, async (req
       UPDATE presupuestos
       SET 
         status = 'rechazado',
-        notas = notas || '\n\n--- MOTIVO DEL RECHAZO ---\n' || $1
+        notas = '--- MOTIVO DEL RECHAZO ---\n' || $1 || '\n\n' || COALESCE(notas, '')
       WHERE id = $2 AND status = 'enviado'
       RETURNING *;
     `;
@@ -312,7 +317,24 @@ router.patch('/:id/rechazar', authenticateToken, authorizeSupervisor, async (req
     if (rows.length === 0) {
       return res.status(404).json({ error: "Presupuesto no encontrado o no está en estado 'enviado'." });
     }
-    res.json({ message: 'Presupuesto rechazado exitosamente.', presupuesto: rows[0] });
+
+    const presupuestoRechazado = rows[0];
+
+    // 2. Enviar notificación al creador del presupuesto
+    (async () => {
+      try {
+        const creadorResult = await db.query('SELECT email FROM usuarios WHERE id = $1', [presupuestoRechazado.created_by_user_id]);
+        if (creadorResult.rows.length > 0) {
+          const creadorEmail = creadorResult.rows[0].email;
+          // Asumimos que existe una función sendQuoteRejectedAlert en emailService
+          await require('./emailService').sendQuoteRejectedAlert(presupuestoRechazado, motivo, creadorEmail);
+        }
+      } catch (emailError) {
+        console.error('El presupuesto fue rechazado, pero falló el envío de email de notificación al creador.', emailError);
+      }
+    })();
+
+    res.json({ message: 'Presupuesto rechazado exitosamente.', presupuesto: presupuestoRechazado });
   } catch (error) {
     next(error);
   }

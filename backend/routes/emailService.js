@@ -91,6 +91,9 @@ const sendAccountActivationAlert = async (user) => {
     throw new Error('El servicio de email no está configurado. No se puede enviar el correo.');
   }
 
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:8081';
+  const loginUrl = `${frontendUrl}/login`;
+
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: user.email,
@@ -98,7 +101,8 @@ const sendAccountActivationAlert = async (user) => {
     html: `
       <h1>¡Bienvenido a EuroPol, ${user.nombre}!</h1>
       <p>Nos complace informarte que tu cuenta ha sido aprobada por un administrador.</p>
-      <p>Ya puedes iniciar sesión con tu correo y contraseña.</p>
+      <p>Ya puedes iniciar sesión en la plataforma con tu correo y contraseña. Puedes acceder desde el siguiente enlace:</p>
+      <p><a href="${loginUrl}" style="background-color: #0d6efd; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Iniciar Sesión</a></p>
       <p>Gracias por unirte a nosotros.</p>
     `,
   };
@@ -132,6 +136,39 @@ const sendPendingActivationEmail = async (newUser) => {
   console.log(`Intentando enviar email de cuenta pendiente a: ${newUser.email}`);
   await transporter.sendMail(mailOptions);
   console.log('Email de cuenta pendiente enviado exitosamente.');
+};
+
+/**
+ * Envía un email al usuario para que verifique su dirección de correo.
+ * @param {object} newUser - El objeto del usuario recién creado.
+ * @param {string} code - El código de verificación.
+ */
+const sendEmailVerification = async (newUser, code) => {
+  if (!transporter) {
+    throw new Error('El servicio de email no está configurado. No se puede enviar el correo.');
+  }
+
+  // Usamos una variable de entorno para la URL del frontend.
+  // Si no está definida, usamos un valor por defecto seguro para desarrollo.
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:8081';
+
+  const verificationUrl = `${frontendUrl}/verify-email?email=${encodeURIComponent(newUser.email)}&code=${code}`;
+
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: newUser.email,
+    subject: 'Verifica tu dirección de correo electrónico en EuroPol',
+    html: `
+      <h1>¡Casi listo, ${newUser.nombre}!</h1>
+      <p>Gracias por registrarte en EuroPol. Tu código de verificación es <strong>${code}</strong>.</p>
+      <p>Para hacerlo más fácil, puedes hacer clic en el siguiente enlace para ir directamente a la página de verificación con los datos precargados:</p>
+      <p><a href="${verificationUrl}" style="background-color: #0d6efd; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Verificar mi Email Ahora</a></p>
+      <p>Una vez verificado, un administrador revisará tu cuenta para su activación final.</p>
+    `,
+  };
+
+  await transporter.sendMail(mailOptions);
+  console.log(`Email de verificación enviado a: ${newUser.email}`);
 };
 
 /**
@@ -227,8 +264,40 @@ const sendQuoteModifiedAlert = async (presupuesto, clientEmails) => {
   console.log('Notificación de presupuesto modificado enviada al cliente.');
 };
 
+/**
+ * Envía una notificación al creador de un presupuesto cuando este ha sido rechazado.
+ * @param {object} presupuesto - El objeto del presupuesto rechazado.
+ * @param {string} motivo - El motivo del rechazo.
+ * @param {string} creadorEmail - El email del usuario que creó el presupuesto.
+ */
+const sendQuoteRejectedAlert = async (presupuesto, motivo, creadorEmail) => {
+  if (!transporter) {
+    throw new Error('El servicio de email no está configurado. No se puede enviar el correo.');
+  }
+  if (!creadorEmail) {
+    console.warn(`ADVERTENCIA: No se envió notificación de presupuesto rechazado porque no se encontró el email del creador.`);
+    return;
+  }
+
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: creadorEmail,
+    subject: `Revisión Requerida: Tu Presupuesto ${presupuesto.codigo_presupuesto} ha sido Rechazado`,
+    html: `
+      <h1>Revisión Requerida</h1>
+      <p>Te informamos que el presupuesto con código <strong>${presupuesto.codigo_presupuesto}</strong> ha sido rechazado por un supervisor.</p>
+      <p><strong>Motivo del rechazo:</strong></p>
+      <blockquote style="border-left: 4px solid #ccc; padding-left: 1rem; margin-left: 0; font-style: italic;">
+        ${motivo}
+      </blockquote>
+      <p>Por favor, inicia sesión en el panel para revisar los comentarios, realizar los ajustes necesarios y volver a enviarlo.</p>
+    `,
+  };
+
+  await transporter.sendMail(mailOptions);
+  console.log(`Notificación de presupuesto rechazado enviada a: ${creadorEmail}`);
+};
+
 // --- EXPORTACIÓN CORRECTA ---
 // Esto es lo más importante: nos aseguramos de que las funciones estén disponibles para otros archivos.
-module.exports = {
-  getAdminAndSupervisorEmails, getUsersFromCompany, sendNewUserAlert, sendAccountActivationAlert, sendPendingActivationEmail, sendNewQuoteForReviewAlert, sendQuoteApprovedAlert, sendQuoteModifiedAlert
-};
+module.exports = { getAdminAndSupervisorEmails, getUsersFromCompany, sendNewUserAlert, sendAccountActivationAlert, sendPendingActivationEmail, sendEmailVerification, sendNewQuoteForReviewAlert, sendQuoteApprovedAlert, sendQuoteModifiedAlert, sendQuoteRejectedAlert };

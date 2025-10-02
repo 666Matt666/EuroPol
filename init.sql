@@ -44,10 +44,12 @@ CREATE TABLE usuarios (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    status VARCHAR(50) NOT NULL DEFAULT 'activo', -- Estados: pendiente, activo, inactivo. Activo por defecto para pruebas.
-    role_id INTEGER NOT NULL DEFAULT 1, -- Por defecto, el rol es 'usuario'
+    status VARCHAR(50) NOT NULL DEFAULT 'pendiente_verificacion', -- Estados: pendiente_verificacion, pendiente, activo, inactivo.
+    role_id INTEGER NOT NULL DEFAULT 1, -- Por defecto, el rol es 'operador'
     empresa_id INTEGER NOT NULL, -- Cada usuario debe pertenecer a una empresa
     created_at TIMESTAMPTZ DEFAULT NOW(),
+    verification_code TEXT,
+    verification_expires TIMESTAMPTZ,
     FOREIGN KEY (role_id) REFERENCES roles(id),
     FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE RESTRICT
 );

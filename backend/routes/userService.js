@@ -1,7 +1,8 @@
 const bcrypt = require('bcryptjs');
 const db = require('../db'); // Esta ruta sigue siendo correcta desde services/
 const jwt = require('jsonwebtoken');
-const { sendNewUserAlert, sendAccountActivationAlert, sendPendingActivationEmail } = require('./emailService');
+const crypto = require('crypto');
+const { sendNewUserAlert, sendAccountActivationAlert, sendPendingActivationEmail, sendEmailVerification } = require('./emailService');
 
 const saltRounds = 10;
 
@@ -37,14 +38,25 @@ const getAdminEmails = async () => {
   return admins.map(a => a.email);
 };
 
+// La firma ahora omite 'status' para que no se use accidentalmente.
 const createUser = async ({ email, password, nombre, apellido, biografia, empresa_id }) => {
   const plainPassword = password; // Guardamos la contraseña en texto plano
   const client = await db.pool.connect();
   try {
     await client.query('BEGIN');
-    const userInsertQuery = 'INSERT INTO usuarios(email, password_hash, empresa_id) VALUES($1, $2, $3) RETURNING id';
-    const userResult = await client.query(userInsertQuery, [email, plainPassword, empresa_id]);
+
+    // Generar código de verificación de 6 dígitos
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutos de validez
+
+    const userInsertQuery = `
+      INSERT INTO usuarios(email, password_hash, empresa_id, status, verification_code, verification_expires) 
+      VALUES($1, $2, $3, 'pendiente_verificacion', $4, $5) 
+      RETURNING id
+    `;
+    const userResult = await client.query(userInsertQuery, [email, plainPassword, empresa_id, verificationCode, verificationExpires]);
     const userId = userResult.rows[0].id;
+
     const profileInsertQuery = 'INSERT INTO perfiles(user_id, nombre, apellido, biografia) VALUES($1, $2, $3, $4)';
     await client.query(profileInsertQuery, [userId, nombre, apellido, biografia || null]);
     await client.query('COMMIT');
@@ -54,12 +66,8 @@ const createUser = async ({ email, password, nombre, apellido, biografia, empres
     // Notificar por correo después de crear el usuario exitosamente
     (async () => {
       try {
-        // 1. Notificar a los administradores
-        const adminEmails = await getAdminEmails(); // Usamos la función local
-        await sendNewUserAlert(newUser, adminEmails);
-
-        // 2. Notificar al usuario que su cuenta está pendiente
-        await sendPendingActivationEmail(newUser);
+        // Enviar email de verificación al usuario
+        await sendEmailVerification(newUser, verificationCode);
       } catch (emailError) {
         // Log más detallado para identificar problemas de autenticación
         console.error('************************************************************');
@@ -147,4 +155,30 @@ const updateUserRole = async (id, roleId) => {
   return rows[0] || null;
 };
 
-module.exports = { getAllUsers, getUserById, getAdminEmails, createUser, updateUserProfile, deleteUser, loginUser, updateUserStatus, updateUserRole };
+const verifyUserEmail = async (email, code) => {
+  const client = await db.pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const findUserQuery = 'SELECT * FROM usuarios WHERE email = $1 AND verification_code = $2 AND verification_expires > NOW()';
+    const userResult = await client.query(findUserQuery, [email, code]);
+
+    if (userResult.rows.length === 0) {
+      return null; // Token inválido o expirado
+    }
+
+    const user = userResult.rows[0];
+    const updateUserQuery = `UPDATE usuarios SET status = 'pendiente', verification_code = NULL, verification_expires = NULL WHERE id = $1`;
+    await client.query(updateUserQuery, [user.id]);
+
+    await client.query('COMMIT');
+    return getUserById(user.id); // Devolvemos el usuario completo y actualizado
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+};
+
+module.exports = { getAllUsers, getUserById, getAdminEmails, createUser, updateUserProfile, deleteUser, loginUser, updateUserStatus, updateUserRole, verifyUserEmail };
