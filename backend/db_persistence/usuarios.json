@@ -1,0 +1,35 @@
+[
+  {
+    "id": 1,
+    "email": "adm@europol.com",
+    "password_hash": "adm",
+    "status": "activo",
+    "role_id": 3,
+    "empresa_id": 1,
+    "created_at": "2025-10-06 17:44:35",
+    "verification_code": null,
+    "verification_expires": null
+  },
+  {
+    "id": 2,
+    "email": "sup@europol.com",
+    "password_hash": "sup",
+    "status": "activo",
+    "role_id": 2,
+    "empresa_id": 1,
+    "created_at": "2025-10-06 17:44:35",
+    "verification_code": null,
+    "verification_expires": null
+  },
+  {
+    "id": 3,
+    "email": "ope@europol.com",
+    "password_hash": "ope",
+    "status": "activo",
+    "role_id": 1,
+    "empresa_id": 2,
+    "created_at": "2025-10-06 17:44:35",
+    "verification_code": null,
+    "verification_expires": null
+  }
+]

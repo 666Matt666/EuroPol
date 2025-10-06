@@ -2,6 +2,8 @@
 -- Versión robustecida con orden de borrado y datos de prueba.
 
 -- Borrar tablas existentes en el orden correcto para evitar errores de dependencia
+DROP TABLE IF EXISTS factura_items;
+DROP TABLE IF EXISTS facturas;
 DROP TABLE IF EXISTS presupuesto_items;
 DROP TABLE IF EXISTS presupuestos;
 -- Primero las que dependen de otras, y al final las tablas maestras.
@@ -208,6 +210,40 @@ FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
 
 -- Tabla para registrar eventos de auditoría
+-- Tablas para la Gestión de Facturas
+
+-- Tabla de encabezados de facturas
+CREATE TABLE facturas (
+    id SERIAL PRIMARY KEY,
+    codigo_factura VARCHAR(50) UNIQUE, -- Ej: FAC-2024-0001
+    cliente_empresa_id INTEGER NOT NULL,
+    created_by_user_id INTEGER NOT NULL,
+    codigo_presupuesto VARCHAR(50), -- Guardamos el código para referencia rápida
+    presupuesto_id INTEGER, -- Opcional, si la factura se origina de un presupuesto
+    status VARCHAR(50) NOT NULL DEFAULT 'borrador', -- borrador, emitida, pagada, anulada
+    fecha_emision TIMESTAMPTZ DEFAULT NOW(),
+    fecha_vencimiento DATE,
+    total NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
+    notas TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    FOREIGN KEY (cliente_empresa_id) REFERENCES empresas(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by_user_id) REFERENCES usuarios(id) ON DELETE SET NULL,
+    FOREIGN KEY (presupuesto_id) REFERENCES presupuestos(id) ON DELETE SET NULL
+);
+
+-- Tabla de ítems de cada factura
+CREATE TABLE factura_items (
+    id SERIAL PRIMARY KEY,
+    factura_id INTEGER NOT NULL,
+    producto_id INTEGER NOT NULL,
+    cantidad INTEGER NOT NULL,
+    precio_unitario NUMERIC(12, 2) NOT NULL,
+    descripcion_item TEXT,
+    FOREIGN KEY (factura_id) REFERENCES facturas(id) ON DELETE CASCADE,
+    FOREIGN KEY (producto_id) REFERENCES productos_bolsas(id) ON DELETE RESTRICT
+);
+
 CREATE TABLE audit_logs (
     id SERIAL PRIMARY KEY,
     event_type VARCHAR(100) NOT NULL,

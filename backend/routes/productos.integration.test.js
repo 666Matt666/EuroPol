@@ -28,8 +28,7 @@ describe('Pruebas de Integración para Productos', () => {
 
   // Antes de que todas las pruebas comiencen, inicializamos la BD de prueba
   beforeAll(async () => {
-    const initScript = fs.readFileSync(path.join(__dirname, '../../init.sql'), 'utf-8');
-    await db.query(initScript);
+    await db.init(); // Usamos la nueva función de inicialización del módulo db
   });
 
   // Después de que todas las pruebas terminen, cerramos la conexión a la BD

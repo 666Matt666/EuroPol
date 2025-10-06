@@ -40,10 +40,11 @@ const getAdminEmails = async () => {
 
 // La firma ahora omite 'status' para que no se use accidentalmente.
 const createUser = async ({ email, password, nombre, apellido, biografia, empresa_id }) => {
-  const plainPassword = password; // Guardamos la contraseña en texto plano
-  const client = await db.pool.connect();
+  // Hasheamos la contraseña + pimienta antes de guardarla.
+  const hashedPassword = await bcrypt.hash(password + process.env.PASSWORD_PEPPER, saltRounds);
+  const isSqlite = (process.env.DB_TYPE === 'h2' || process.env.DB_TYPE === 'sqlite');
   try {
-    await client.query('BEGIN');
+    if (!isSqlite) await db.query('BEGIN');
 
     // Generar código de verificación de 6 dígitos
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -54,12 +55,12 @@ const createUser = async ({ email, password, nombre, apellido, biografia, empres
       VALUES($1, $2, $3, 'pendiente_verificacion', $4, $5) 
       RETURNING id
     `;
-    const userResult = await client.query(userInsertQuery, [email, plainPassword, empresa_id, verificationCode, verificationExpires]);
+    const userResult = await db.query(userInsertQuery, [email, hashedPassword, empresa_id, verificationCode, verificationExpires]);
     const userId = userResult.rows[0].id;
 
     const profileInsertQuery = 'INSERT INTO perfiles(user_id, nombre, apellido, biografia) VALUES($1, $2, $3, $4)';
-    await client.query(profileInsertQuery, [userId, nombre, apellido, biografia || null]);
-    await client.query('COMMIT');
+    await db.query(profileInsertQuery, [userId, nombre, apellido, biografia || null]);
+    if (!isSqlite) await db.query('COMMIT');
 
     const newUser = await getUserById(userId);
 
@@ -79,10 +80,8 @@ const createUser = async ({ email, password, nombre, apellido, biografia, empres
     })();
     return newUser;
   } catch (e) {
-    await client.query('ROLLBACK');
+    if (!isSqlite) await db.query('ROLLBACK');
     throw e;
-  } finally {
-    client.release();
   }
 };
 
@@ -118,7 +117,13 @@ const loginUser = async ({ email, password }) => {
     throw error;
   }
 
-  const isMatch = (password === user.password_hash); // Comparación simple de texto
+  // Comprobación de compatibilidad:
+  // 1. Si la contraseña en la BD es un hash de bcrypt, usamos bcrypt para comparar.
+  // 2. Si no, es una contraseña de desarrollo en texto plano y hacemos una comparación simple.
+  const isHashed = user.password_hash.startsWith('$2a$');
+  const isMatch = isHashed
+    ? await bcrypt.compare(password + process.env.PASSWORD_PEPPER, user.password_hash)
+    : (password === user.password_hash);
 
   if (!isMatch) {
     const error = new Error('La contraseña es incorrecta.');
@@ -156,12 +161,12 @@ const updateUserRole = async (id, roleId) => {
 };
 
 const verifyUserEmail = async (email, code) => {
-  const client = await db.pool.connect();
+  const isSqlite = (process.env.DB_TYPE === 'h2' || process.env.DB_TYPE === 'sqlite');
   try {
-    await client.query('BEGIN');
+    if (!isSqlite) await db.query('BEGIN');
 
     const findUserQuery = 'SELECT * FROM usuarios WHERE email = $1 AND verification_code = $2 AND verification_expires > NOW()';
-    const userResult = await client.query(findUserQuery, [email, code]);
+    const userResult = await db.query(findUserQuery, [email, code]);
 
     if (userResult.rows.length === 0) {
       return null; // Token inválido o expirado
@@ -169,15 +174,13 @@ const verifyUserEmail = async (email, code) => {
 
     const user = userResult.rows[0];
     const updateUserQuery = `UPDATE usuarios SET status = 'pendiente', verification_code = NULL, verification_expires = NULL WHERE id = $1`;
-    await client.query(updateUserQuery, [user.id]);
+    await db.query(updateUserQuery, [user.id]);
 
-    await client.query('COMMIT');
+    if (!isSqlite) await db.query('COMMIT');
     return getUserById(user.id); // Devolvemos el usuario completo y actualizado
   } catch (e) {
-    await client.query('ROLLBACK');
+    if (!isSqlite) await db.query('ROLLBACK');
     throw e;
-  } finally {
-    client.release();
   }
 };
 

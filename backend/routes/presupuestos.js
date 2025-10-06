@@ -14,16 +14,16 @@ router.post('/', authenticateToken, async (req, res, next) => {
     return res.status(400).json({ error: 'Faltan datos del cliente o los ítems del presupuesto.' });
   }
 
-  const client = await db.pool.connect();
+  const isSqlite = (process.env.DB_TYPE === 'h2' || process.env.DB_TYPE === 'sqlite');
   try {
-    await client.query('BEGIN');
+    if (!isSqlite) await db.query('BEGIN');
 
     // 1. Generar el código de presupuesto (ej: PRE-2024-0001)
     const year = new Date().getFullYear();
     const prefix = `PRE-${year}-`;
     // Buscamos el último presupuesto de este año para obtener el correlativo
     const lastCodeQuery = `SELECT codigo_presupuesto FROM presupuestos WHERE codigo_presupuesto LIKE $1 ORDER BY id DESC LIMIT 1`;
-    const lastCodeResult = await client.query(lastCodeQuery, [`${prefix}%`]);
+    const lastCodeResult = await db.query(lastCodeQuery, [`${prefix}%`]);
     
     let nextNumber = 1;
     if (lastCodeResult.rows.length > 0) {
@@ -33,7 +33,6 @@ router.post('/', authenticateToken, async (req, res, next) => {
     // Formateamos el número a 4 dígitos con ceros a la izquierda
     const codigo_presupuesto = `${prefix}${String(nextNumber).padStart(4, '0')}`;
 
-
     // 2. Insertar el encabezado del presupuesto
     const presupuestoQuery = `
       INSERT INTO presupuestos (codigo_presupuesto, cliente_empresa_id, created_by_user_id, fecha_vencimiento, notas)
@@ -41,32 +40,30 @@ router.post('/', authenticateToken, async (req, res, next) => {
       RETURNING id;
     `;
     const presupuestoValues = [codigo_presupuesto, cliente_empresa_id, created_by_user_id, fecha_vencimiento || null, notas || null];
-    const presupuestoResult = await client.query(presupuestoQuery, presupuestoValues);
+    const presupuestoResult = await db.query(presupuestoQuery, presupuestoValues);
     const presupuestoId = presupuestoResult.rows[0].id;
 
-    // 2. Insertar cada ítem del presupuesto
+    // 3. Insertar cada ítem del presupuesto
     const itemInsertPromises = items.map(item => {
       const itemQuery = `
         INSERT INTO presupuesto_items (presupuesto_id, producto_id, cantidad, precio_unitario, descripcion_item)
         VALUES ($1, $2, $3, $4, $5);
       `;
       const itemValues = [presupuestoId, item.producto_id, item.cantidad, item.precio_unitario, item.descripcion_item || null];
-      return client.query(itemQuery, itemValues);
+      return db.query(itemQuery, itemValues);
     });
 
     await Promise.all(itemInsertPromises);
 
     // 4. Confirmar la transacción
-    await client.query('COMMIT');
+    if (!isSqlite) await db.query('COMMIT');
 
     res.status(201).json({ id: presupuestoId, message: 'Presupuesto creado exitosamente.' });
 
   } catch (error) {
-    await client.query('ROLLBACK');
+    if (!isSqlite) await db.query('ROLLBACK');
     console.error('Error al crear el presupuesto:', error);
     next(error);
-  } finally {
-    client.release();
   }
 });
 
@@ -140,12 +137,12 @@ router.put('/:id', authenticateToken, async (req, res, next) => {
     return res.status(400).json({ error: 'Faltan datos del cliente o los ítems del presupuesto.' });
   }
 
-  const client = await db.pool.connect();
+  const isSqlite = (process.env.DB_TYPE === 'h2' || process.env.DB_TYPE === 'sqlite');
   try {
-    await client.query('BEGIN');
+    if (!isSqlite) await db.query('BEGIN');
 
     // 1. Obtener el estado actual del presupuesto para validaciones
-    const currentPresupuestoResult = await client.query('SELECT status, codigo_presupuesto, cliente_empresa_id FROM presupuestos WHERE id = $1 FOR UPDATE', [id]);
+    const currentPresupuestoResult = await db.query('SELECT status, codigo_presupuesto, cliente_empresa_id FROM presupuestos WHERE id = $1', [id]);
     if (currentPresupuestoResult.rows.length === 0) {
       throw new Error('Presupuesto no encontrado.');
     }
@@ -157,9 +154,6 @@ router.put('/:id', authenticateToken, async (req, res, next) => {
 
     // 2. Validar permisos de edición y determinar el nuevo estado
     if (role === 'administrador' || role === 'supervisor') {
-      if (currentStatus !== 'borrador' && currentStatus !== 'enviado') {
-        return res.status(403).json({ error: `Los supervisores no pueden editar presupuestos en estado '${currentStatus}'.` });
-      }
       if (currentStatus === 'enviado') {
         newStatus = 'borrador'; // El presupuesto vuelve a borrador para que el operador lo confirme de nuevo.
         wasModifiedBySupervisor = true;
@@ -180,20 +174,20 @@ router.put('/:id', authenticateToken, async (req, res, next) => {
         status = $4
       WHERE id = $5;
     `;
-    await client.query(presupuestoQuery, [cliente_empresa_id, fecha_vencimiento || null, notas || '', newStatus, id]);
+    await db.query(presupuestoQuery, [cliente_empresa_id, fecha_vencimiento || null, notas || '', newStatus, id]);
 
     // 4. Borrar los ítems antiguos
-    await client.query('DELETE FROM presupuesto_items WHERE presupuesto_id = $1', [id]);
+    await db.query('DELETE FROM presupuesto_items WHERE presupuesto_id = $1', [id]);
 
     // 5. Insertar los nuevos ítems
     const itemInsertPromises = items.map(item => {
       const itemQuery = `INSERT INTO presupuesto_items (presupuesto_id, producto_id, cantidad, precio_unitario, descripcion_item) VALUES ($1, $2, $3, $4, $5);`;
       const itemValues = [id, item.producto_id, item.cantidad, item.precio_unitario, item.descripcion_item || null];
-      return client.query(itemQuery, itemValues);
+      return db.query(itemQuery, itemValues);
     });
     await Promise.all(itemInsertPromises);
 
-    await client.query('COMMIT');
+    if (!isSqlite) await db.query('COMMIT');
 
     // 6. Enviar notificación si fue modificado por un supervisor
     if (wasModifiedBySupervisor) {
@@ -210,10 +204,8 @@ router.put('/:id', authenticateToken, async (req, res, next) => {
 
     res.json({ id: parseInt(id, 10), message: 'Presupuesto actualizado exitosamente.' });
   } catch (error) {
-    await client.query('ROLLBACK');
+    if (!isSqlite) await db.query('ROLLBACK');
     next(error);
-  } finally {
-    client.release();
   }
 });
 

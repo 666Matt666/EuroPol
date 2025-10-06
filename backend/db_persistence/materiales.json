@@ -1,0 +1,30 @@
+[
+  {
+    "id": 1,
+    "nombre": "Prueba - Polietileno de Alta Densidad (PEAD)",
+    "descripcion": "Material resistente y ligero, comúnmente usado para bolsas de supermercado.",
+    "origen": "Virgen",
+    "es_imprimible": 1
+  },
+  {
+    "id": 2,
+    "nombre": "Prueba - Polietileno de Baja Densidad (PEBD)",
+    "descripcion": "Material flexible y transparente, ideal para bolsas de boutique.",
+    "origen": "Virgen",
+    "es_imprimible": 1
+  },
+  {
+    "id": 3,
+    "nombre": "Prueba - Polipropileno (PP)",
+    "descripcion": "Material brillante y claro, resistente a la grasa.",
+    "origen": "Virgen",
+    "es_imprimible": 0
+  },
+  {
+    "id": 4,
+    "nombre": "Prueba - Material Compostable (PLA)",
+    "descripcion": "Alternativa ecológica derivada de recursos renovables como el almidón de maíz.",
+    "origen": "Renovable",
+    "es_imprimible": 1
+  }
+]

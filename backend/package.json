@@ -7,7 +7,8 @@
     "start": "node index.js",
     "test": "npx jest --testMatch='**/*.test.js'",
     "test:integration": "cross-env NODE_ENV=test npx jest --testMatch='**/*.integration.test.js'",
-    "start:consumer": "node kafkaConsumer.js"
+    "start:consumer": "node kafkaConsumer.js",
+    "db:populate-json": "node populate-json-from-sql.js"
   },
   "jest": {
     "setupFiles": [
@@ -27,7 +28,8 @@
     "kafkajs": "^2.2.4",
     "multer": "^2.0.2",
     "nodemailer": "^6.9.13",
-    "pg": "^8.11.5"
+    "pg": "^8.11.5",
+    "sqlite3": "^5.1.7"
   },
   "devDependencies": {
     "cross-env": "^10.0.0",

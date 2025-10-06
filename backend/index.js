@@ -6,6 +6,7 @@ const express = require('express');
 const cors = require('cors');
 const errorHandler = require('./errorHandler'); // Importar el middleware de errores
 const fs = require('fs');
+const db = require('./db'); // Importar la configuración de la BD
 const kafkaService = require('./kafkaService'); // Importar el servicio de Kafka
 
 const app = express();
@@ -42,6 +43,7 @@ const dibujoRoutes = require('./routes/dibujos');
 const materialRoutes = require('./routes/materiales'); // Nueva ruta
 const presupuestoRoutes = require('./routes/presupuestos'); // Nueva ruta
 const uploadRoutes = require('./routes/uploads'); // Nueva ruta para subidas
+const facturaRoutes = require('./routes/facturas');
 app.use('/api/users', userRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/empresas', empresaRoutes);
@@ -50,6 +52,7 @@ app.use('/api/dibujos', dibujoRoutes);
 app.use('/api/materiales', materialRoutes); // Usar la nueva ruta
 app.use('/api/presupuestos', presupuestoRoutes); // Usar la nueva ruta
 app.use('/api/uploads', uploadRoutes); // Usar la nueva ruta para subidas
+app.use('/api/facturas', facturaRoutes);
 
 /**
  * Middleware para manejar errores de forma centralizada (importado).
@@ -60,6 +63,7 @@ let server;
 
 // Iniciar el productor de Kafka y luego el servidor Express
 const startServer = async () => {
+  await db.init(); // Esperar a que la base de datos esté lista
   await kafkaService.init();
 
   server = app.listen(port, () => {
@@ -71,10 +75,12 @@ const startServer = async () => {
 const gracefulShutdown = async (signal) => {
   console.log(`\n[${signal}] Señal recibida. Cerrando la aplicación elegantemente...`);
   
+  // 1. Guardar datos de la BD en memoria (si aplica)
+  await db.saveData();
   // 1. Detener el servidor HTTP
   server.close(async () => {
     console.log('Servidor HTTP cerrado.');
-    // 2. Desconectar Kafka
+    // 2. Desconectar Kafka (si está en uso)
     await kafkaService.shutdown();
     // 3. Salir del proceso
     process.exit(0);
