@@ -6,12 +6,20 @@ const { authenticateToken, authorizeSupervisor } = require('./auth');
 
 // POST /api/presupuestos - Crear un nuevo presupuesto con sus ítems
 router.post('/', authenticateToken, async (req, res, next) => {
-  const { cliente_empresa_id, fecha_vencimiento, notas, items } = req.body;
-  const { userId: created_by_user_id } = req.user;
+  let { cliente_empresa_id, fecha_vencimiento, notas, items } = req.body;
+  const { userId: created_by_user_id, role, empresa_id: user_empresa_id } = req.user;
 
   // Validación básica
   if (!cliente_empresa_id || !items || !Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ error: 'Faltan datos del cliente o los ítems del presupuesto.' });
+  }
+
+  // Si el usuario es un 'usuario' (operador), nos aseguramos de que el presupuesto se asigne a su propia empresa.
+  if (role === 'usuario' && !cliente_empresa_id) {
+    console.log(`[DEBUG] Operador (ID: ${created_by_user_id}) creando presupuesto. Forzando cliente_empresa_id a ${user_empresa_id}.`);
+    cliente_empresa_id = user_empresa_id;
+  } else {
+    console.log(`[DEBUG] Supervisor/Admin (ID: ${created_by_user_id}) creando presupuesto para cliente_empresa_id: ${cliente_empresa_id}.`);
   }
 
   const isSqlite = (process.env.DB_TYPE === 'h2' || process.env.DB_TYPE === 'sqlite');
@@ -41,6 +49,7 @@ router.post('/', authenticateToken, async (req, res, next) => {
     `;
     const presupuestoValues = [codigo_presupuesto, cliente_empresa_id, created_by_user_id, fecha_vencimiento || null, notas || null];
     const presupuestoResult = await db.query(presupuestoQuery, presupuestoValues);
+    console.log(`[DEBUG] Presupuesto creado con ID: ${presupuestoResult.rows[0].id} para la empresa cliente ID: ${cliente_empresa_id}`);
     const presupuestoId = presupuestoResult.rows[0].id;
 
     // 3. Insertar cada ítem del presupuesto
@@ -70,25 +79,45 @@ router.post('/', authenticateToken, async (req, res, next) => {
 // GET /api/presupuestos - Obtener todos los presupuestos
 router.get('/', authenticateToken, async (req, res, next) => {
   try {
+    const { role, empresaId } = req.user; // Corregido de empresa_id a empresaId
+    let queryParams = [];
     // Consulta que une presupuestos con el nombre de la empresa cliente y el email del creador
     const query = `
       SELECT 
         p.id,
         p.codigo_presupuesto,
         p.status,
+        p.notas,
         p.fecha_vencimiento,
         p.created_at,
         p.cliente_empresa_id,
         e.nombre AS cliente_nombre,
         u.email AS creador_email
       FROM presupuestos p
-      JOIN empresas e ON p.cliente_empresa_id = e.id
-      JOIN usuarios u ON p.created_by_user_id = u.id
-      ORDER BY p.created_at DESC;
+      LEFT JOIN empresas e ON p.cliente_empresa_id = e.id
+      LEFT JOIN usuarios u ON p.created_by_user_id = u.id
+      ${role === 'usuario' ? 'WHERE p.cliente_empresa_id = $1' : ''}
+      ORDER BY p.created_at DESC
     `;
-    const { rows } = await db.query(query);
-    res.json(rows);
+
+    console.log(`[DEBUG] Obteniendo presupuestos para rol: '${role}' con empresa ID: '${empresaId}'`);
+    if (role === 'usuario') {
+      queryParams.push(empresaId);
+    }
+
+    const { rows: presupuestos } = await db.query(query, queryParams);
+
+    // Para cada presupuesto, obtenemos sus ítems por separado para máxima compatibilidad
+    for (const presupuesto of presupuestos) {
+      const itemsQuery = `SELECT * FROM presupuesto_items WHERE presupuesto_id = $1`;
+      const { rows: items } = await db.query(itemsQuery, [presupuesto.id]);
+      presupuesto.items = items;
+    }
+
+    console.log(`[DEBUG] Se encontraron ${presupuestos.length} presupuestos para el usuario.`);
+    res.json(presupuestos);
   } catch (error) {
+    console.error('[ERROR] Falló la obtención de presupuestos:', error);
     next(error);
   }
 });
@@ -171,7 +200,8 @@ router.put('/:id', authenticateToken, async (req, res, next) => {
         cliente_empresa_id = $1, 
         fecha_vencimiento = $2, 
         notas = $3, -- Siempre actualizamos con las notas que vienen del frontend
-        status = $4
+        status = $4,
+        updated_at = NOW()
       WHERE id = $5;
     `;
     await db.query(presupuestoQuery, [cliente_empresa_id, fecha_vencimiento || null, notas || '', newStatus, id]);

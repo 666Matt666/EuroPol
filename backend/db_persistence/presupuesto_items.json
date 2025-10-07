@@ -1,0 +1,98 @@
+[
+  {
+    "id": 1,
+    "presupuesto_id": 1,
+    "producto_id": 1,
+    "cantidad": 1,
+    "precio_unitario": 0.15,
+    "descripcion_item": null
+  },
+  {
+    "id": 2,
+    "presupuesto_id": 1,
+    "producto_id": 2,
+    "cantidad": 20,
+    "precio_unitario": 0.25,
+    "descripcion_item": null
+  },
+  {
+    "id": 3,
+    "presupuesto_id": 2,
+    "producto_id": 3,
+    "cantidad": 100,
+    "precio_unitario": 0.1,
+    "descripcion_item": null
+  },
+  {
+    "id": 4,
+    "presupuesto_id": 2,
+    "producto_id": 4,
+    "cantidad": 50,
+    "precio_unitario": 0.3,
+    "descripcion_item": null
+  },
+  {
+    "id": 5,
+    "presupuesto_id": 3,
+    "producto_id": 1,
+    "cantidad": 100,
+    "precio_unitario": 0.15,
+    "descripcion_item": null
+  },
+  {
+    "id": 6,
+    "presupuesto_id": 3,
+    "producto_id": 2,
+    "cantidad": 50,
+    "precio_unitario": 0.25,
+    "descripcion_item": null
+  },
+  {
+    "id": 7,
+    "presupuesto_id": 4,
+    "producto_id": 3,
+    "cantidad": 2,
+    "precio_unitario": 0.1,
+    "descripcion_item": null
+  },
+  {
+    "id": 8,
+    "presupuesto_id": 4,
+    "producto_id": 4,
+    "cantidad": 3,
+    "precio_unitario": 0.3,
+    "descripcion_item": null
+  },
+  {
+    "id": 9,
+    "presupuesto_id": 5,
+    "producto_id": 1,
+    "cantidad": 11,
+    "precio_unitario": 0.15,
+    "descripcion_item": null
+  },
+  {
+    "id": 10,
+    "presupuesto_id": 5,
+    "producto_id": 2,
+    "cantidad": 3,
+    "precio_unitario": 0.25,
+    "descripcion_item": null
+  },
+  {
+    "id": 11,
+    "presupuesto_id": 6,
+    "producto_id": 1,
+    "cantidad": 1,
+    "precio_unitario": 0.15,
+    "descripcion_item": null
+  },
+  {
+    "id": 12,
+    "presupuesto_id": 7,
+    "producto_id": 1,
+    "cantidad": 1,
+    "precio_unitario": 0.15,
+    "descripcion_item": null
+  }
+]

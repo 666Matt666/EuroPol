@@ -182,33 +182,6 @@ CREATE TABLE presupuesto_items (
     FOREIGN KEY (producto_id) REFERENCES productos_bolsas(id) ON DELETE RESTRICT -- No se puede borrar un producto si está en un presupuesto
 );
 
--- Trigger para actualizar el 'updated_at' de los presupuestos
-CREATE OR REPLACE FUNCTION update_presupuestos_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-   NEW.updated_at = NOW();
-   RETURN NEW;
-END;
-$$ language 'plpgsql';
-
-CREATE TRIGGER update_presupuestos_updated_at
-BEFORE UPDATE ON presupuestos
-FOR EACH ROW
-EXECUTE FUNCTION update_presupuestos_updated_at_column();
-
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-   NEW.updated_at = NOW();
-   RETURN NEW;
-END;
-$$ language 'plpgsql';
-
-CREATE TRIGGER update_productos_bolsas_updated_at
-BEFORE UPDATE ON productos_bolsas
-FOR EACH ROW
-EXECUTE FUNCTION update_updated_at_column();
-
 -- Tabla para registrar eventos de auditoría
 -- Tablas para la Gestión de Facturas
 
@@ -218,8 +191,8 @@ CREATE TABLE facturas (
     codigo_factura VARCHAR(50) UNIQUE, -- Ej: FAC-2024-0001
     cliente_empresa_id INTEGER NOT NULL,
     created_by_user_id INTEGER NOT NULL,
-    codigo_presupuesto VARCHAR(50), -- Guardamos el código para referencia rápida
-    presupuesto_id INTEGER, -- Opcional, si la factura se origina de un presupuesto
+    presupuesto_ids TEXT, -- Almacena un array de IDs de presupuestos (como JSON string)
+    codigos_presupuestos TEXT, -- Almacena un array de códigos de presupuestos (como JSON string)
     status VARCHAR(50) NOT NULL DEFAULT 'borrador', -- borrador, emitida, pagada, anulada
     fecha_emision TIMESTAMPTZ DEFAULT NOW(),
     fecha_vencimiento DATE,
@@ -228,8 +201,7 @@ CREATE TABLE facturas (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     FOREIGN KEY (cliente_empresa_id) REFERENCES empresas(id) ON DELETE CASCADE,
-    FOREIGN KEY (created_by_user_id) REFERENCES usuarios(id) ON DELETE SET NULL,
-    FOREIGN KEY (presupuesto_id) REFERENCES presupuestos(id) ON DELETE SET NULL
+    FOREIGN KEY (created_by_user_id) REFERENCES usuarios(id) ON DELETE SET NULL
 );
 
 -- Tabla de ítems de cada factura
@@ -240,6 +212,7 @@ CREATE TABLE factura_items (
     cantidad INTEGER NOT NULL,
     precio_unitario NUMERIC(12, 2) NOT NULL,
     descripcion_item TEXT,
+    origen_presupuesto_codigo VARCHAR(50), -- Para trazabilidad por ítem
     FOREIGN KEY (factura_id) REFERENCES facturas(id) ON DELETE CASCADE,
     FOREIGN KEY (producto_id) REFERENCES productos_bolsas(id) ON DELETE RESTRICT
 );

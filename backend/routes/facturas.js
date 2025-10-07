@@ -4,8 +4,9 @@ const db = require('../db');
 const { authenticateToken, authorizeSupervisor } = require('./auth');
 
 // GET /api/facturas - Obtener todas las facturas
+console.log('Cargando rutas de facturas...');
 router.get('/', authenticateToken, async (req, res, next) => {
-  const { role, empresa_id } = req.user;
+  const { role, empresaId } = req.user; // Corregido de empresa_id a empresaId
   try {
     let queryParams = [];
     // Consulta principal sin agregación JSON para compatibilidad con H2
@@ -19,22 +20,23 @@ router.get('/', authenticateToken, async (req, res, next) => {
         f.total,
         f.cliente_empresa_id,
         f.notas,
-        f.presupuesto_id,
+        f.presupuesto_ids,
+        f.codigos_presupuestos,
         e.nombre AS cliente_nombre,
-        u.email AS creador_email,
-        pres.codigo_presupuesto
+        u.email AS creador_email
       FROM facturas f
-      JOIN empresas e ON f.cliente_empresa_id = e.id
-      JOIN usuarios u ON f.created_by_user_id = u.id
-      LEFT JOIN presupuestos pres ON f.presupuesto_id = pres.id
+      LEFT JOIN empresas e ON f.cliente_empresa_id = e.id -- LEFT JOIN es más seguro
+      LEFT JOIN usuarios u ON f.created_by_user_id = u.id -- Cambiado a LEFT JOIN para evitar errores si el usuario fue eliminado
       ${role === 'usuario' ? 'WHERE f.cliente_empresa_id = $1' : ''}
       ORDER BY f.created_at DESC
     `;
 
     if (role === 'usuario') {
-      queryParams.push(empresa_id);
+      queryParams.push(empresaId);
     }
 
+    console.log('[DEBUG] Ejecutando consulta para obtener facturas:', query);
+    console.log('[DEBUG] Con parámetros:', queryParams); // El log ya estaba, pero ahora usará el valor correcto
     const { rows: facturas } = await db.query(query, queryParams);
 
     // Para cada factura, obtenemos sus ítems por separado.
@@ -45,8 +47,10 @@ router.get('/', authenticateToken, async (req, res, next) => {
       factura.items = items;
     }
 
+    console.log(`[DEBUG] Se encontraron ${facturas.length} facturas.`);
     res.json(facturas);
   } catch (error) {
+    console.error('[ERROR] Falló la obtención de facturas:', error);
     next(error);
   }
 });
@@ -78,7 +82,7 @@ router.get('/:id', authenticateToken, async (req, res, next) => {
 
 // POST /api/facturas - Crear una nueva factura con sus ítems
 router.post('/', [authenticateToken, authorizeSupervisor], async (req, res, next) => {
-  const { cliente_empresa_id, presupuesto_id, codigo_presupuesto, fecha_vencimiento, notas, items, total } = req.body;
+  const { cliente_empresa_id, presupuesto_ids, codigos_presupuestos, fecha_vencimiento, notas, items, total } = req.body;
   const { userId: created_by_user_id } = req.user;
 
   if (!cliente_empresa_id || !items || !Array.isArray(items) || items.length === 0) {
@@ -103,20 +107,26 @@ router.post('/', [authenticateToken, authorizeSupervisor], async (req, res, next
     const codigo_factura = `${prefix}${String(nextNumber).padStart(4, '0')}`;
 
     const facturaQuery = `
-      INSERT INTO facturas (codigo_factura, cliente_empresa_id, created_by_user_id, presupuesto_id, codigo_presupuesto, fecha_vencimiento, notas, total, status)
+      INSERT INTO facturas (codigo_factura, cliente_empresa_id, created_by_user_id, presupuesto_ids, codigos_presupuestos, fecha_vencimiento, notas, total, status)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'emitida')
-      RETURNING id;
+      RETURNING *;
     `;
-    const facturaValues = [codigo_factura, cliente_empresa_id, created_by_user_id, presupuesto_id || null, codigo_presupuesto || null, fecha_vencimiento || null, notas || null, total];
+    const facturaValues = [
+      codigo_factura, cliente_empresa_id, created_by_user_id, 
+      JSON.stringify(presupuesto_ids || []), 
+      JSON.stringify(codigos_presupuestos || []), 
+      fecha_vencimiento || null, notas || null, total
+    ];
     const facturaResult = await db.query(facturaQuery, facturaValues);
-    const facturaId = facturaResult.rows[0].id;
+    const newFactura = facturaResult.rows[0];
+    const facturaId = newFactura.id;
 
     const itemInsertPromises = items.map(item => {
       const itemQuery = `
-        INSERT INTO factura_items (factura_id, producto_id, cantidad, precio_unitario, descripcion_item)
-        VALUES ($1, $2, $3, $4, $5);
+        INSERT INTO factura_items (factura_id, producto_id, cantidad, precio_unitario, descripcion_item, origen_presupuesto_codigo)
+        VALUES ($1, $2, $3, $4, $5, $6);
       `;
-      const itemValues = [facturaId, item.producto_id, item.cantidad, item.precio_unitario, item.descripcion_item || null];
+      const itemValues = [facturaId, item.producto_id, item.cantidad, item.precio_unitario, item.descripcion_item || null, item.origen_presupuesto_codigo || null];
       return db.query(itemQuery, itemValues);
     });
 
@@ -124,7 +134,7 @@ router.post('/', [authenticateToken, authorizeSupervisor], async (req, res, next
 
     if (!isSqlite) await db.query('COMMIT');
 
-    res.status(201).json({ id: facturaId, message: 'Factura creada exitosamente.' });
+    res.status(201).json(newFactura);
 
   } catch (error) {
     if (!isSqlite) await db.query('ROLLBACK');
@@ -136,7 +146,7 @@ router.post('/', [authenticateToken, authorizeSupervisor], async (req, res, next
 // PUT /api/facturas/:id - Actualizar una factura existente
 router.put('/:id', [authenticateToken, authorizeSupervisor], async (req, res, next) => {
   const { id } = req.params;
-  const { cliente_empresa_id, presupuesto_id, fecha_vencimiento, notas, items, total, codigo_presupuesto } = req.body;
+  const { cliente_empresa_id, presupuesto_ids, fecha_vencimiento, notas, items, total, codigos_presupuestos } = req.body;
 
   if (!cliente_empresa_id || !items || !Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ error: 'Faltan datos del cliente o los ítems de la factura.' });
@@ -148,16 +158,21 @@ router.put('/:id', [authenticateToken, authorizeSupervisor], async (req, res, ne
 
     const facturaQuery = `
       UPDATE facturas
-      SET cliente_empresa_id = $1, fecha_vencimiento = $2, notas = $3, total = $4, codigo_presupuesto = $5, presupuesto_id = $6
+      SET cliente_empresa_id = $1, fecha_vencimiento = $2, notas = $3, total = $4, codigos_presupuestos = $5, presupuesto_ids = $6, updated_at = NOW()
       WHERE id = $7;
     `;
-    await db.query(facturaQuery, [cliente_empresa_id, fecha_vencimiento || null, notas || null, total, codigo_presupuesto, presupuesto_id, id]);
+    await db.query(facturaQuery, [
+      cliente_empresa_id, fecha_vencimiento || null, notas || null, total, 
+      JSON.stringify(codigos_presupuestos || []), 
+      JSON.stringify(presupuesto_ids || []), 
+      id
+    ]);
 
     await db.query('DELETE FROM factura_items WHERE factura_id = $1', [id]);
 
     const itemInsertPromises = items.map(item => {
-      const itemQuery = `INSERT INTO factura_items (factura_id, producto_id, cantidad, precio_unitario, descripcion_item) VALUES ($1, $2, $3, $4, $5);`;
-      const itemValues = [id, item.producto_id, item.cantidad, item.precio_unitario, item.descripcion_item || null];
+      const itemQuery = `INSERT INTO factura_items (factura_id, producto_id, cantidad, precio_unitario, descripcion_item, origen_presupuesto_codigo) VALUES ($1, $2, $3, $4, $5, $6);`;
+      const itemValues = [id, item.producto_id, item.cantidad, item.precio_unitario, item.descripcion_item || null, item.origen_presupuesto_codigo || null];
       return db.query(itemQuery, itemValues);
     });
     await Promise.all(itemInsertPromises);
