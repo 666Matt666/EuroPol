@@ -475,5 +475,50 @@
     "precio_unitario": 0.3,
     "descripcion_item": null,
     "origen_presupuesto_codigo": "PRE-2025-0004"
+  },
+  {
+    "id": 54,
+    "factura_id": 9,
+    "producto_id": 1,
+    "cantidad": 1,
+    "precio_unitario": 0.15,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0007"
+  },
+  {
+    "id": 55,
+    "factura_id": 9,
+    "producto_id": 4,
+    "cantidad": 50,
+    "precio_unitario": 0.3,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0002"
+  },
+  {
+    "id": 56,
+    "factura_id": 9,
+    "producto_id": 1,
+    "cantidad": 1,
+    "precio_unitario": 0.15,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": null
+  },
+  {
+    "id": 57,
+    "factura_id": 9,
+    "producto_id": 3,
+    "cantidad": 100,
+    "precio_unitario": 0.1,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0002"
+  },
+  {
+    "id": 58,
+    "factura_id": 9,
+    "producto_id": 1,
+    "cantidad": 1,
+    "precio_unitario": 0.15,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0006"
   }
 ]
