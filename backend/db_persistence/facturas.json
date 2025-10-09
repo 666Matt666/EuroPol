@@ -1,0 +1,17 @@
+[
+  {
+    "id": 9,
+    "codigo_factura": "FAC-2025-0001",
+    "cliente_empresa_id": 2,
+    "created_by_user_id": 1,
+    "presupuesto_ids": "[7,6,2]",
+    "codigos_presupuestos": "[\"PRE-2025-0007\",\"PRE-2025-0006\",\"PRE-2025-0002\"]",
+    "status": "emitida",
+    "fecha_emision": "2025-10-07 18:17:10",
+    "fecha_vencimiento": null,
+    "total": 25.45,
+    "notas": null,
+    "created_at": "2025-10-07 18:17:10",
+    "updated_at": "2025-10-07 18:17:10"
+  }
+]

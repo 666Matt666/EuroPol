@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "nombre": "Prueba - Empresa Principal",
+    "cuit": "30-11111111-1",
+    "direccion": "Calle Falsa 123",
+    "created_at": "2025-10-06 17:44:35"
+  },
+  {
+    "id": 2,
+    "nombre": "Prueba - Cliente Secundario SA",
+    "cuit": "30-22222222-2",
+    "direccion": "Avenida Siempreviva 742",
+    "created_at": "2025-10-06 17:44:35"
+  },
+  {
+    "id": 3,
+    "nombre": "Prueba - Taller Tercero",
+    "cuit": "30-33333333-3",
+    "direccion": "Bulevar de los Sueños Rotos 456",
+    "created_at": "2025-10-06 17:44:35"
+  }
+]

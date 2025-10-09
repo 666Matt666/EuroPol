@@ -1,6 +1,6 @@
 const express = require('express');
 const db = require('../db');
-const { authenticateToken, authorizeAdmin } = require('./auth.js');
+const { authenticateToken, authorizeSupervisor } = require('./auth');
 const router = express.Router();
 
 // GET /api/empresas - Obtener todas las empresas (protegido para usuarios autenticados)
@@ -15,7 +15,7 @@ router.get('/', async (req, res, next) => {
 });
 
 // POST /api/empresas - Crear una nueva empresa (solo para administradores)
-router.post('/', authenticateToken, authorizeAdmin, async (req, res, next) => {
+router.post('/', authenticateToken, authorizeSupervisor, async (req, res, next) => {
   const { nombre, cuit, direccion } = req.body;
 
   if (!nombre) {
@@ -36,7 +36,7 @@ router.post('/', authenticateToken, authorizeAdmin, async (req, res, next) => {
 });
 
 // PUT /api/empresas/:id - Actualizar una empresa (solo para administradores)
-router.put('/:id', authenticateToken, authorizeAdmin, async (req, res, next) => {
+router.put('/:id', authenticateToken, authorizeSupervisor, async (req, res, next) => {
   const { id } = req.params;
   const { nombre, cuit, direccion } = req.body;
 
@@ -58,7 +58,7 @@ router.put('/:id', authenticateToken, authorizeAdmin, async (req, res, next) => 
 });
 
 // DELETE /api/empresas/:id - Eliminar una empresa (solo para administradores)
-router.delete('/:id', authenticateToken, authorizeAdmin, async (req, res, next) => {
+router.delete('/:id', authenticateToken, authorizeSupervisor, async (req, res, next) => {
   const { id } = req.params;
   try {
     const result = await db.query('DELETE FROM empresas WHERE id = $1 RETURNING *;', [id]);

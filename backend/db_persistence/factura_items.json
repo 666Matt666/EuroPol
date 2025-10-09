@@ -1,0 +1,524 @@
+[
+  {
+    "id": 1,
+    "factura_id": 1,
+    "producto_id": 1,
+    "cantidad": 1,
+    "precio_unitario": 0.15,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": null
+  },
+  {
+    "id": 2,
+    "factura_id": 1,
+    "producto_id": 2,
+    "cantidad": 20,
+    "precio_unitario": 0.25,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": null
+  },
+  {
+    "id": 3,
+    "factura_id": 2,
+    "producto_id": 1,
+    "cantidad": 1,
+    "precio_unitario": 0.15,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": null
+  },
+  {
+    "id": 4,
+    "factura_id": 2,
+    "producto_id": 2,
+    "cantidad": 20,
+    "precio_unitario": 0.25,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": null
+  },
+  {
+    "id": 5,
+    "factura_id": 1,
+    "producto_id": 1,
+    "cantidad": 1,
+    "precio_unitario": 0.15,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": null
+  },
+  {
+    "id": 6,
+    "factura_id": 1,
+    "producto_id": 2,
+    "cantidad": 20,
+    "precio_unitario": 0.25,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": null
+  },
+  {
+    "id": 7,
+    "factura_id": 2,
+    "producto_id": 1,
+    "cantidad": 1,
+    "precio_unitario": 0.15,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": null
+  },
+  {
+    "id": 8,
+    "factura_id": 2,
+    "producto_id": 2,
+    "cantidad": 20,
+    "precio_unitario": 0.25,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": null
+  },
+  {
+    "id": 9,
+    "factura_id": 3,
+    "producto_id": 1,
+    "cantidad": 1,
+    "precio_unitario": 0.15,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": null
+  },
+  {
+    "id": 10,
+    "factura_id": 3,
+    "producto_id": 3,
+    "cantidad": 100,
+    "precio_unitario": 0.1,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": null
+  },
+  {
+    "id": 11,
+    "factura_id": 3,
+    "producto_id": 4,
+    "cantidad": 50,
+    "precio_unitario": 0.3,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": null
+  },
+  {
+    "id": 12,
+    "factura_id": 3,
+    "producto_id": 2,
+    "cantidad": 20,
+    "precio_unitario": 0.25,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": null
+  },
+  {
+    "id": 13,
+    "factura_id": 4,
+    "producto_id": 3,
+    "cantidad": 100,
+    "precio_unitario": 0.1,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": null
+  },
+  {
+    "id": 14,
+    "factura_id": 4,
+    "producto_id": 4,
+    "cantidad": 50,
+    "precio_unitario": 0.3,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": null
+  },
+  {
+    "id": 15,
+    "factura_id": 4,
+    "producto_id": 1,
+    "cantidad": 1,
+    "precio_unitario": 0.15,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": null
+  },
+  {
+    "id": 16,
+    "factura_id": 4,
+    "producto_id": 2,
+    "cantidad": 20,
+    "precio_unitario": 0.25,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": null
+  },
+  {
+    "id": 17,
+    "factura_id": 5,
+    "producto_id": 3,
+    "cantidad": 100,
+    "precio_unitario": 0.1,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": null
+  },
+  {
+    "id": 18,
+    "factura_id": 5,
+    "producto_id": 4,
+    "cantidad": 50,
+    "precio_unitario": 0.3,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": null
+  },
+  {
+    "id": 19,
+    "factura_id": 5,
+    "producto_id": 2,
+    "cantidad": 20,
+    "precio_unitario": 0.25,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": null
+  },
+  {
+    "id": 20,
+    "factura_id": 5,
+    "producto_id": 1,
+    "cantidad": 1,
+    "precio_unitario": 0.15,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": null
+  },
+  {
+    "id": 21,
+    "factura_id": 1,
+    "producto_id": 3,
+    "cantidad": 2,
+    "precio_unitario": 0.1,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": null
+  },
+  {
+    "id": 22,
+    "factura_id": 1,
+    "producto_id": 1,
+    "cantidad": 100,
+    "precio_unitario": 0.15,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": null
+  },
+  {
+    "id": 23,
+    "factura_id": 1,
+    "producto_id": 4,
+    "cantidad": 3,
+    "precio_unitario": 0.3,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": null
+  },
+  {
+    "id": 24,
+    "factura_id": 1,
+    "producto_id": 2,
+    "cantidad": 50,
+    "precio_unitario": 0.25,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": null
+  },
+  {
+    "id": 25,
+    "factura_id": 2,
+    "producto_id": 1,
+    "cantidad": 100,
+    "precio_unitario": 0.15,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0003"
+  },
+  {
+    "id": 26,
+    "factura_id": 2,
+    "producto_id": 2,
+    "cantidad": 50,
+    "precio_unitario": 0.25,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0003"
+  },
+  {
+    "id": 27,
+    "factura_id": 2,
+    "producto_id": 3,
+    "cantidad": 2,
+    "precio_unitario": 0.1,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0004"
+  },
+  {
+    "id": 28,
+    "factura_id": 2,
+    "producto_id": 4,
+    "cantidad": 3,
+    "precio_unitario": 0.3,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0004"
+  },
+  {
+    "id": 29,
+    "factura_id": 3,
+    "producto_id": 3,
+    "cantidad": 2,
+    "precio_unitario": 0.1,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0004"
+  },
+  {
+    "id": 30,
+    "factura_id": 3,
+    "producto_id": 1,
+    "cantidad": 100,
+    "precio_unitario": 0.15,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0003"
+  },
+  {
+    "id": 31,
+    "factura_id": 3,
+    "producto_id": 2,
+    "cantidad": 50,
+    "precio_unitario": 0.25,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0003"
+  },
+  {
+    "id": 32,
+    "factura_id": 3,
+    "producto_id": 4,
+    "cantidad": 3,
+    "precio_unitario": 0.3,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0004"
+  },
+  {
+    "id": 33,
+    "factura_id": 4,
+    "producto_id": 3,
+    "cantidad": 2,
+    "precio_unitario": 0.1,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0004"
+  },
+  {
+    "id": 34,
+    "factura_id": 4,
+    "producto_id": 1,
+    "cantidad": 100,
+    "precio_unitario": 0.15,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0003"
+  },
+  {
+    "id": 35,
+    "factura_id": 4,
+    "producto_id": 4,
+    "cantidad": 3,
+    "precio_unitario": 0.3,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0004"
+  },
+  {
+    "id": 36,
+    "factura_id": 4,
+    "producto_id": 2,
+    "cantidad": 50,
+    "precio_unitario": 0.25,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0003"
+  },
+  {
+    "id": 37,
+    "factura_id": 5,
+    "producto_id": 1,
+    "cantidad": 1,
+    "precio_unitario": 0.15,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0001"
+  },
+  {
+    "id": 38,
+    "factura_id": 5,
+    "producto_id": 3,
+    "cantidad": 100,
+    "precio_unitario": 0.1,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0002"
+  },
+  {
+    "id": 39,
+    "factura_id": 5,
+    "producto_id": 4,
+    "cantidad": 50,
+    "precio_unitario": 0.3,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0002"
+  },
+  {
+    "id": 40,
+    "factura_id": 5,
+    "producto_id": 2,
+    "cantidad": 20,
+    "precio_unitario": 0.25,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0001"
+  },
+  {
+    "id": 41,
+    "factura_id": 6,
+    "producto_id": 1,
+    "cantidad": 1,
+    "precio_unitario": 0.15,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0001"
+  },
+  {
+    "id": 42,
+    "factura_id": 6,
+    "producto_id": 3,
+    "cantidad": 2,
+    "precio_unitario": 0.1,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0004"
+  },
+  {
+    "id": 43,
+    "factura_id": 6,
+    "producto_id": 2,
+    "cantidad": 20,
+    "precio_unitario": 0.25,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0001"
+  },
+  {
+    "id": 44,
+    "factura_id": 6,
+    "producto_id": 4,
+    "cantidad": 3,
+    "precio_unitario": 0.3,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0004"
+  },
+  {
+    "id": 45,
+    "factura_id": 6,
+    "producto_id": 4,
+    "cantidad": 1,
+    "precio_unitario": 0.3,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": null
+  },
+  {
+    "id": 46,
+    "factura_id": 7,
+    "producto_id": 3,
+    "cantidad": 2,
+    "precio_unitario": 0.1,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0004"
+  },
+  {
+    "id": 47,
+    "factura_id": 7,
+    "producto_id": 2,
+    "cantidad": 50,
+    "precio_unitario": 0.25,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0003"
+  },
+  {
+    "id": 48,
+    "factura_id": 7,
+    "producto_id": 1,
+    "cantidad": 100,
+    "precio_unitario": 0.15,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0003"
+  },
+  {
+    "id": 49,
+    "factura_id": 7,
+    "producto_id": 3,
+    "cantidad": 1000,
+    "precio_unitario": 0.1,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": null
+  },
+  {
+    "id": 50,
+    "factura_id": 8,
+    "producto_id": 3,
+    "cantidad": 100,
+    "precio_unitario": 0.1,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0002"
+  },
+  {
+    "id": 51,
+    "factura_id": 8,
+    "producto_id": 4,
+    "cantidad": 50,
+    "precio_unitario": 0.3,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0002"
+  },
+  {
+    "id": 52,
+    "factura_id": 8,
+    "producto_id": 3,
+    "cantidad": 2,
+    "precio_unitario": 0.1,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0004"
+  },
+  {
+    "id": 53,
+    "factura_id": 8,
+    "producto_id": 4,
+    "cantidad": 3,
+    "precio_unitario": 0.3,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0004"
+  },
+  {
+    "id": 54,
+    "factura_id": 9,
+    "producto_id": 1,
+    "cantidad": 1,
+    "precio_unitario": 0.15,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0007"
+  },
+  {
+    "id": 55,
+    "factura_id": 9,
+    "producto_id": 4,
+    "cantidad": 50,
+    "precio_unitario": 0.3,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0002"
+  },
+  {
+    "id": 56,
+    "factura_id": 9,
+    "producto_id": 1,
+    "cantidad": 1,
+    "precio_unitario": 0.15,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": null
+  },
+  {
+    "id": 57,
+    "factura_id": 9,
+    "producto_id": 3,
+    "cantidad": 100,
+    "precio_unitario": 0.1,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0002"
+  },
+  {
+    "id": 58,
+    "factura_id": 9,
+    "producto_id": 1,
+    "cantidad": 1,
+    "precio_unitario": 0.15,
+    "descripcion_item": null,
+    "origen_presupuesto_codigo": "PRE-2025-0006"
+  }
+]
