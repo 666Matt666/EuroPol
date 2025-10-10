@@ -64,6 +64,7 @@ let server;
 // Iniciar el productor de Kafka y luego el servidor Express
 const startServer = async () => {
   await db.init(); // Esperar a que la base de datos esté lista
+  // La carga de datos desde S3 ya se llama dentro de db.init() si es necesario.
   await kafkaService.init();
 
   server = app.listen(port, () => {

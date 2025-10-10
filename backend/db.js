@@ -2,9 +2,14 @@ const { Pool } = require('pg');
 const sqlite3 = require('sqlite3').verbose();
 const fs = require('fs').promises;
 const path = require('path');
+const { S3Client, PutObjectCommand, GetObjectCommand, ListObjectsV2Command } = require('@aws-sdk/client-s3');
 
 const dbType = process.env.DB_TYPE || 'postgres';
-const persistenceDir = path.join(__dirname, 'db_persistence');
+
+// --- Configuración para S3 ---
+const s3Client = new S3Client({ region: process.env.AWS_REGION || 'us-east-1' });
+const S3_BUCKET = process.env.S3_PERSISTENCE_BUCKET;
+// -----------------------------
 
 let db;
 
@@ -78,32 +83,48 @@ const tablesToPersist = [
   'audit_logs',
 ];
 
-async function saveDataToFiles() {
-  if (dbType !== 'h2' && dbType !== 'sqlite') return;
-  console.log('Guardando datos de la base de datos en memoria...');
+async function saveDataToS3() {
+  if (dbType !== 'h2' && dbType !== 'sqlite' || !S3_BUCKET) {
+    if (S3_BUCKET) console.log('Persistencia solo habilitada para DB en memoria.');
+    return;
+  }
+  console.log(`Guardando datos de la base de datos en memoria en el bucket S3: ${S3_BUCKET}`);
   try {
-    await fs.mkdir(persistenceDir, { recursive: true });
     for (const table of tablesToPersist) {
       const { rows } = await query(`SELECT * FROM ${table}`);
       if (rows.length > 0) {
-        await fs.writeFile(path.join(persistenceDir, `${table}.json`), JSON.stringify(rows, null, 2));
-        console.log(`  - Datos de la tabla '${table}' guardados.`);
+        const command = new PutObjectCommand({
+          Bucket: S3_BUCKET,
+          Key: `${table}.json`,
+          Body: JSON.stringify(rows, null, 2),
+          ContentType: 'application/json'
+        });
+        await s3Client.send(command);
+        console.log(`  - Datos de la tabla '${table}' guardados en S3.`);
       }
     }
   } catch (err) {
-    console.error('Error al guardar los datos en archivos JSON:', err);
+    console.error('Error al guardar los datos en S3:', err);
   }
 }
 
-async function loadDataFromFiles() {
-  if (dbType !== 'h2' && dbType !== 'sqlite') return;
-  console.log('Cargando datos desde archivos JSON a la base de datos en memoria...');
+async function loadDataFromS3() {
+  if (dbType !== 'h2' && dbType !== 'sqlite' || !S3_BUCKET) {
+    if (S3_BUCKET) console.log('Persistencia solo habilitada para DB en memoria.');
+    return;
+  }
+  console.log(`Cargando datos desde el bucket S3: ${S3_BUCKET}`);
   try {
     for (const table of tablesToPersist) {
-      const filePath = path.join(persistenceDir, `${table}.json`);
       try {
-        const data = await fs.readFile(filePath, 'utf8');
-        const rows = JSON.parse(data);
+        const command = new GetObjectCommand({
+          Bucket: S3_BUCKET,
+          Key: `${table}.json`,
+        });
+        const response = await s3Client.send(command);
+        const dataStr = await response.Body.transformToString('utf-8');
+        const rows = JSON.parse(dataStr);
+
         if (rows.length > 0) {
           for (const row of rows) {
             const columns = Object.keys(row).join(', ');
@@ -111,16 +132,16 @@ async function loadDataFromFiles() {
             const values = Object.values(row);
             await query(`INSERT INTO ${table} (${columns}) VALUES (${placeholders})`, values);
           }
-          console.log(`  - Datos de la tabla '${table}' cargados.`);
+          console.log(`  - Datos de la tabla '${table}' cargados desde S3.`);
         }
       } catch (err) {
-        if (err.code !== 'ENOENT') { // ENOENT = file not found, lo cual es normal la primera vez
-          console.error(`Error al cargar datos para la tabla ${table}:`, err);
+        if (err.name !== 'NoSuchKey') { // NoSuchKey es el equivalente a "archivo no encontrado" en S3
+          console.error(`Error al cargar datos para la tabla ${table} desde S3:`, err);
         }
       }
     }
   } catch (err) {
-    console.error('Error general al cargar datos desde archivos JSON:', err);
+    console.error('Error general al cargar datos desde S3:', err);
   }
 }
 
@@ -141,5 +162,5 @@ module.exports = {
   query,
   init, // Exportamos la nueva función de inicialización
   pool: db, // Para mantener compatibilidad con el código que usa pool.connect()
-  saveData: saveDataToFiles,
+  saveData: saveDataToS3,
 };
