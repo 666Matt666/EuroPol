@@ -77,7 +77,7 @@ const gracefulShutdown = async (signal) => {
   console.log(`\n[${signal}] Señal recibida. Cerrando la aplicación elegantemente...`);
   
   // 1. Guardar datos de la BD en memoria (si aplica)
-  await db.saveData();
+  // await db.saveData(); // Ya no es necesario con una base de datos persistente como PostgreSQL.
   // 1. Detener el servidor HTTP
   server.close(async () => {
     console.log('Servidor HTTP cerrado.');
