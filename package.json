@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.906.0",
     "@mdi/font": "^7.4.47",
     "vuetify": "^3.0.0"
   }
